@@ -2,5 +2,5 @@ version: "1"
 rules:
   - base: master
     upstream: fesh0r:master
-    mergeMethod: merge
+    mergeMethod: rebase
 label: ":arrow_heading_down: pull" 
