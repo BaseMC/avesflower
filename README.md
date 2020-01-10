@@ -1,3 +1,15 @@
+# AvesFlower
+Modificated version (fork) of [fernflower](https://github.com/JetBrains/intellij-community/tree/master/plugins/java-decompiler/engine) for the Aves project
+
+all modificated files: [Diff via GitHub](https://github.com/fesh0r/fernflower/compare/master...BaseMC:master)
+
+[license for modifications](LICENSE)
+
+[used licenses](LICENSES)
+
+
+## Copied from fernflower:
+
 ### About Fernflower
 
 Fernflower is the first actually working analytical decompiler for Java and 
