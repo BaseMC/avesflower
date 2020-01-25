@@ -1,12 +1,20 @@
+[![Build](https://img.shields.io/github/workflow/status/BaseMC/avesflower/Master%20CI)](https://github.com/BaseMC/avesflower/actions)
+[![Latest Version](https://img.shields.io/github/v/release/BaseMC/avesflower)](https://github.com/BaseMC/avesflower/releases)
+
 # AvesFlower
 Modificated version (fork) of [fernflower](https://github.com/JetBrains/intellij-community/tree/master/plugins/java-decompiler/engine) for the Aves project
-
-all modificated files: [Diff via GitHub](https://github.com/fesh0r/fernflower/compare/master...BaseMC:master)
 
 [license for modifications](LICENSE)
 
 [used licenses](LICENSES)
 
+Get modificated files:
+```shell
+git remote add -f b https://github.com/fesh0r/fernflower.git
+git remote update
+git diff master remotes/b/master
+git remote rm b
+```
 
 ## Copied from fernflower:
 
