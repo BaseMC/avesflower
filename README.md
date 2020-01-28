@@ -1,5 +1,6 @@
 [![Build](https://img.shields.io/github/workflow/status/BaseMC/avesflower/Master%20CI)](https://github.com/BaseMC/avesflower/actions)
 [![Latest Version](https://img.shields.io/github/v/release/BaseMC/avesflower)](https://github.com/BaseMC/avesflower/releases)
+[![Build Develop](https://img.shields.io/github/workflow/status/BaseMC/avesflower/Develop%20CI?label=build%20develop)](https://github.com/BaseMC/avesflower/actions)
 
 # AvesFlower
 Modificated version of [fernflower](https://github.com/JetBrains/intellij-community/tree/master/plugins/java-decompiler/engine) (forked from [here](https://github.com/fesh0r/fernflower)) for the Aves project
