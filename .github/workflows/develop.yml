@@ -1,9 +1,9 @@
-name: Master PR CI
+name: Develop CI
 
 on: 
-  pull_request:
+  push:
     branches: 
-      - 'master'
+      - 'develop'
 
 jobs:
   test:
