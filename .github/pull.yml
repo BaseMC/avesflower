@@ -1,5 +1,0 @@
-version: "1"
-rules:
-  - base: develop
-    upstream: fesh0r:master
-label: ":arrow_heading_down: pull" 
