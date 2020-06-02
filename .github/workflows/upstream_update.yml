@@ -2,8 +2,8 @@ name: Pull detached upstream automatically
 
 on:
   schedule:
-    # Run every day
-    - cron: '*/5 * * * *'
+    # Run once per day
+    - cron: '22 2 * * *'
   
 jobs:
   build:
