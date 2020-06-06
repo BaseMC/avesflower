@@ -22,5 +22,5 @@ jobs:
           upstreamrepo: https://github.com/fesh0r/fernflower
           upstreambranch: master
         env:
-          # NOTE: This is a Personal Access Token, ${{ secrets.GITHUB_TOKEN }} has not enough permissions :(
-          GITHUB_TOKEN: ${{ secrets.GH_PAT }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_PAT: ${{ secrets.GH_PAT }}
