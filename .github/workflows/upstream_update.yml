@@ -17,7 +17,7 @@ jobs:
         run: git fetch --prune --unshallow
       # Pull the detached remote and do the magic
       - name: Pull Detached Remote
-        uses: litetex/pull-detached-remote@v0.1.2
+        uses: litetex/pull-detached-remote@v0.1.3
         with:
           upstreamrepo: https://github.com/fesh0r/fernflower
           upstreambranch: master
