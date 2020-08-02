@@ -1,6 +1,7 @@
 name: Pull detached upstream automatically
 
 on:
+  workflow_dispatch:
   schedule:
     # Run once per day
     - cron: '22 2 * * *'
