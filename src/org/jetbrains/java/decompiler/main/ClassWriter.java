@@ -249,13 +249,6 @@ public class ClassWriter {
         }
       }
 
-      if (cl.hasModifier(CodeConstants.ACC_MODULE)) {
-        StructModuleAttribute moduleAttribute = cl.getAttribute(StructGeneralAttribute.ATTRIBUTE_MODULE);
-        if (moduleAttribute != null) {
-          writeModuleInfoBody(buffer, moduleAttribute);
-        }
-      }
-
       buffer.appendIndent(indent).append('}');
 
       if (node.type != ClassNode.CLASS_ANONYMOUS) {
@@ -269,10 +262,10 @@ public class ClassWriter {
     DecompilerContext.getLogger().endWriteClass();
   }
 
+  @SuppressWarnings("SpellCheckingInspection")
   private static boolean isSyntheticRecordMethod(StructClass cl, StructMethod mt, TextBuffer code) {
     if (cl.getRecordComponents() != null) {
       String name = mt.getName(), descriptor = mt.getDescriptor();
-      //noinspection SpellCheckingInspection
       if (name.equals("equals") && descriptor.equals("(Ljava/lang/Object;)Z") ||
           name.equals("hashCode") && descriptor.equals("()I") ||
           name.equals("toString") && descriptor.equals("()Ljava/lang/String;")) {
@@ -285,46 +278,99 @@ public class ClassWriter {
     return false;
   }
 
+  public static void packageInfoToJava(StructClass cl, TextBuffer buffer) {
+    appendAnnotations(buffer, 0, cl, -1);
+
+    int index = cl.qualifiedName.lastIndexOf('/');
+    String packageName = cl.qualifiedName.substring(0, index).replace('/', '.');
+    buffer.append("package ").append(packageName).append(';').appendLineSeparator().appendLineSeparator();
+  }
+
+  public static void moduleInfoToJava(StructClass cl, TextBuffer buffer) {
+    appendAnnotations(buffer, 0, cl, -1);
+
+    StructModuleAttribute moduleAttribute = cl.getAttribute(StructGeneralAttribute.ATTRIBUTE_MODULE);
+
+    if ((moduleAttribute.moduleFlags & CodeConstants.ACC_OPEN) != 0) {
+      buffer.append("open ");
+    }
+
+    buffer.append("module ").append(moduleAttribute.moduleName).append(" {").appendLineSeparator();
+
+    writeModuleInfoBody(buffer, moduleAttribute);
+
+    buffer.append('}').appendLineSeparator();
+  }
+
   private static void writeModuleInfoBody(TextBuffer buffer, StructModuleAttribute moduleAttribute) {
-    for (StructModuleAttribute.RequiresEntry requires : moduleAttribute.requires) {
-      buffer.appendIndent(1).append("requires ").append(requires.moduleName.replace('/', '.')).append(';').appendLineSeparator();
-    }
+    boolean newLineNeeded = false;
 
-    for (StructModuleAttribute.ExportsEntry exports : moduleAttribute.exports) {
-      buffer.appendIndent(1).append("exports ").append(exports.packageName.replace('/', '.'));
-
-      List<String> exportToModules = exports.exportToModules;
-      if (exportToModules.size() > 0) {
-        buffer.append(" to").appendLineSeparator();
-        appendFQClassNames(buffer, exportToModules);
+    List<StructModuleAttribute.RequiresEntry> requiresEntries = moduleAttribute.requires;
+    if (!requiresEntries.isEmpty()) {
+      for (StructModuleAttribute.RequiresEntry requires : requiresEntries) {
+        if (!isGenerated(requires.flags)) {
+          buffer.appendIndent(1).append("requires ").append(requires.moduleName.replace('/', '.')).append(';').appendLineSeparator();
+          newLineNeeded = true;
+        }
       }
-
-      buffer.append(';').appendLineSeparator();
     }
 
-    for (StructModuleAttribute.OpensEntry opens : moduleAttribute.opens) {
-      buffer.appendIndent(1).append("opens ").append(opens.packageName.replace('/', '.'));
-
-      List<String> opensToModules = opens.opensToModules;
-      if (opensToModules.size() > 0) {
-        buffer.append(" to").appendLineSeparator();
-        appendFQClassNames(buffer, opensToModules);
+    List<StructModuleAttribute.ExportsEntry> exportsEntries = moduleAttribute.exports;
+    if (!exportsEntries.isEmpty()) {
+      if (newLineNeeded) buffer.appendLineSeparator();
+      for (StructModuleAttribute.ExportsEntry exports : exportsEntries) {
+        if (!isGenerated(exports.flags)) {
+          buffer.appendIndent(1).append("exports ").append(exports.packageName.replace('/', '.'));
+          List<String> exportToModules = exports.exportToModules;
+          if (exportToModules.size() > 0) {
+            buffer.append(" to").appendLineSeparator();
+            appendFQClassNames(buffer, exportToModules);
+          }
+          buffer.append(';').appendLineSeparator();
+          newLineNeeded = true;
+        }
       }
-
-      buffer.append(';').appendLineSeparator();
     }
 
-    for (String uses : moduleAttribute.uses) {
-      buffer.appendIndent(1).append("uses ").append(ExprProcessor.buildJavaClassName(uses)).append(';').appendLineSeparator();
+    List<StructModuleAttribute.OpensEntry> opensEntries = moduleAttribute.opens;
+    if (!opensEntries.isEmpty()) {
+      if (newLineNeeded) buffer.appendLineSeparator();
+      for (StructModuleAttribute.OpensEntry opens : opensEntries) {
+        if (!isGenerated(opens.flags)) {
+          buffer.appendIndent(1).append("opens ").append(opens.packageName.replace('/', '.'));
+          List<String> opensToModules = opens.opensToModules;
+          if (opensToModules.size() > 0) {
+            buffer.append(" to").appendLineSeparator();
+            appendFQClassNames(buffer, opensToModules);
+          }
+          buffer.append(';').appendLineSeparator();
+          newLineNeeded = true;
+        }
+      }
     }
 
-    for (StructModuleAttribute.ProvidesEntry provides : moduleAttribute.provides) {
-      buffer.appendIndent(1).append("provides ").append(ExprProcessor.buildJavaClassName(provides.interfaceName)).append(" with").appendLineSeparator();
-      @SuppressWarnings({"SSBasedInspection", "RedundantSuppression"}) List<String> javaNames =
-        provides.implementationNames.stream().map(ExprProcessor::buildJavaClassName).collect(Collectors.toList());
-      appendFQClassNames(buffer, javaNames);
-      buffer.append(';').appendLineSeparator();
+    List<String> usesEntries = moduleAttribute.uses;
+    if (!usesEntries.isEmpty()) {
+      if (newLineNeeded) buffer.appendLineSeparator();
+      for (String uses : usesEntries) {
+        buffer.appendIndent(1).append("uses ").append(ExprProcessor.buildJavaClassName(uses)).append(';').appendLineSeparator();
+      }
+      newLineNeeded = true;
     }
+
+    List<StructModuleAttribute.ProvidesEntry> providesEntries = moduleAttribute.provides;
+    if (!providesEntries.isEmpty()) {
+      if (newLineNeeded) buffer.appendLineSeparator();
+      for (StructModuleAttribute.ProvidesEntry provides : providesEntries) {
+        buffer.appendIndent(1).append("provides ").append(ExprProcessor.buildJavaClassName(provides.interfaceName)).append(" with").appendLineSeparator();
+        appendFQClassNames(buffer, provides.implementationNames.stream().map(ExprProcessor::buildJavaClassName).collect(Collectors.toList()));
+        buffer.append(';').appendLineSeparator();
+      }
+    }
+  }
+
+  private static boolean isGenerated(int flags) {
+    return (flags & (CodeConstants.ACC_SYNTHETIC | CodeConstants.ACC_MANDATED)) != 0;
   }
 
   private static void addTracer(StructClass cls, StructMethod method, BytecodeMappingTracer tracer) {
@@ -349,7 +395,6 @@ public class ClassWriter {
     boolean isEnum = DecompilerContext.getOption(IFernflowerPreferences.DECOMPILE_ENUM) && (flags & CodeConstants.ACC_ENUM) != 0;
     boolean isInterface = (flags & CodeConstants.ACC_INTERFACE) != 0;
     boolean isAnnotation = (flags & CodeConstants.ACC_ANNOTATION) != 0;
-    boolean isModuleInfo = (flags & CodeConstants.ACC_MODULE) != 0 && cl.hasAttribute(StructGeneralAttribute.ATTRIBUTE_MODULE);
 
     if (isDeprecated) {
       appendDeprecation(buffer, indent);
@@ -395,24 +440,10 @@ public class ClassWriter {
     else if (components != null) {
       buffer.append("record ");
     }
-    else if (isModuleInfo) {
-      StructModuleAttribute moduleAttribute = cl.getAttribute(StructGeneralAttribute.ATTRIBUTE_MODULE);
-
-      if ((moduleAttribute.moduleFlags & CodeConstants.ACC_OPEN) != 0) {
-        buffer.append("open ");
-      }
-
-      buffer.append("module ");
-      buffer.append(moduleAttribute.moduleName);
-    }
     else {
       buffer.append("class ");
     }
-
-    // Handled above
-    if (!isModuleInfo) {
-      buffer.append(node.simpleName);
-    }
+    buffer.append(node.simpleName);
 
     GenericClassDescriptor descriptor = getGenericClassDescriptor(cl);
     if (descriptor != null && !descriptor.fparameters.isEmpty()) {

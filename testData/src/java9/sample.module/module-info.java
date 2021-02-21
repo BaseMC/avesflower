@@ -1,6 +1,8 @@
-@Deprecated
+import sample.pkg1.TestModuleAnno;
+
+@TestModuleAnno("...")
 module sample.module {
-  requires java.base;
+  requires java.desktop;
 
   uses java.util.spi.ToolProvider;
 
