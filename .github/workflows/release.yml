@@ -1,12 +1,9 @@
-name: Master CI
+name: Release
 
 on: 
   workflow_dispatch:
   push:
     branches: [ master ]
-
-# Don't use a cache here: 
-#  This is the last instance that can detect missing dependecies
 
 jobs:
   build_release:
@@ -17,9 +14,18 @@ jobs:
       - uses: actions/checkout@v2
 
       - name: Setup - Java
-        uses: actions/setup-java@v1
+        uses: actions/setup-java@v2
         with:
           java-version: 11.0.x
+          distribution: 'adopt'
+
+      - name: Setup - Restore Cache
+        uses: actions/cache@v2
+        with:
+          path: ~/.gradle/caches
+          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle') }}
+          restore-keys: |
+            ${{ runner.os }}-gradle-  
 
       - name: Build - Gradle
         run: ./gradlew build
