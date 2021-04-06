@@ -1,12 +1,9 @@
-name: Master CI
+name: Release
 
 on: 
   workflow_dispatch:
   push:
     branches: [ master ]
-
-# Don't use a cache here: 
-#  This is the last instance that can detect missing dependecies
 
 jobs:
   build_release:
