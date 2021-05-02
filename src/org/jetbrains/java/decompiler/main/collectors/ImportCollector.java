@@ -1,4 +1,4 @@
-// Copyright 2000-2018 JetBrains s.r.o. Use of this source code is governed by the Apache 2.0 license that can be found in the LICENSE file.
+// Copyright 2000-2021 JetBrains s.r.o. Use of this source code is governed by the Apache 2.0 license that can be found in the LICENSE file.
 package org.jetbrains.java.decompiler.main.collectors;
 
 import org.jetbrains.java.decompiler.main.ClassesProcessor.ClassNode;
@@ -39,8 +39,10 @@ public class ImportCollector {
 
     Map<String, StructClass> classes = DecompilerContext.getStructContext().getClasses();
     LinkedList<String> queue = new LinkedList<>();
+    Set<StructClass> processedClasses = new HashSet<>();
     StructClass currentClass = root.classStruct;
     while (currentClass != null) {
+      processedClasses.add(currentClass);
       if (currentClass.superClass != null) {
         queue.add(currentClass.superClass.getString());
       }
@@ -63,10 +65,17 @@ public class ImportCollector {
       }
 
       // .. and traverse through parent.
-      currentClass = !queue.isEmpty() ? classes.get(queue.removeFirst()) : null;
-      while (currentClass == null && !queue.isEmpty()) {
-        currentClass = classes.get(queue.removeFirst());
-      }
+      do {
+        currentClass = queue.isEmpty() ? null : classes.get(queue.removeFirst());
+
+        if (currentClass != null && processedClasses.contains(currentClass)) {
+          // Class already processed, skipping.
+
+          // This may be sign of circularity in the class hierarchy but in most cases this mean that same interface
+          // are listed as implemented several times in the class hierarchy.
+          currentClass = null;
+        }
+      } while (currentClass == null && !queue.isEmpty());
     }
   }
 
@@ -150,21 +159,14 @@ public class ImportCollector {
     return result == null ? shortName : result;
   }
 
-  public int writeImports(TextBuffer buffer) {
-    int importLinesWritten = 0;
-
+  public void writeImports(TextBuffer buffer, boolean addSeparator) {
     List<String> imports = packImports();
-
-    for (String s : imports) {
-      buffer.append("import ");
-      buffer.append(s);
-      buffer.append(';');
-      buffer.appendLineSeparator();
-
-      importLinesWritten++;
+    for (String line : imports) {
+      buffer.append("import ").append(line).append(';').appendLineSeparator();
     }
-
-    return importLinesWritten;
+    if (addSeparator && !imports.isEmpty()) {
+      buffer.appendLineSeparator();
+    }
   }
 
   private List<String> packImports() {

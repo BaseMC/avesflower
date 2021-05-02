@@ -1,4 +1,4 @@
-// Copyright 2000-2017 JetBrains s.r.o. Use of this source code is governed by the Apache 2.0 license that can be found in the LICENSE file.
+// Copyright 2000-2020 JetBrains s.r.o. Use of this source code is governed by the Apache 2.0 license that can be found in the LICENSE file.
 package org.jetbrains.java.decompiler.modules.decompiler;
 
 import org.jetbrains.java.decompiler.modules.decompiler.exps.Exprent;
@@ -11,7 +11,7 @@ import org.jetbrains.java.decompiler.modules.decompiler.stats.Statement;
 
 import java.util.*;
 
-public class IfHelper {
+public final class IfHelper {
   public static boolean mergeAllIfs(RootStatement root) {
     boolean res = mergeAllIfsRec(root, new HashSet<>());
     if (res) {
@@ -31,7 +31,8 @@ public class IfHelper {
           res |= mergeAllIfsRec(st, setReorderedIfs);
 
           // collapse composed if's
-          if (changed = mergeIfs(st, setReorderedIfs)) {
+          if (mergeIfs(st, setReorderedIfs)) {
+            changed = true;
             break;
           }
         }
@@ -75,21 +76,25 @@ public class IfHelper {
             continue;
           }
 
-          if (updated = collapseIfIf(rtnode)) {
+          if (collapseIfIf(rtnode)) {
+            updated = true;
             break;
           }
 
           if (!setReorderedIfs.contains(stat.id)) {
-            if (updated = collapseIfElse(rtnode)) {
+            if (collapseIfElse(rtnode)) {
+              updated = true;
               break;
             }
 
-            if (updated = collapseElse(rtnode)) {
+            if (collapseElse(rtnode)) {
+              updated = true;
               break;
             }
           }
 
-          if (updated = reorderIf((IfStatement)stat)) {
+          if (reorderIf((IfStatement)stat)) {
+            updated = true;
             setReorderedIfs.add(stat.id);
             break;
           }
@@ -440,10 +445,9 @@ public class IfHelper {
         if (sttemp == ifstat) {
           break;
         }
-        else {
-          if (elsedirectpath = existsPath(sttemp, next)) {
-            break;
-          }
+        else if (existsPath(sttemp, next)) {
+          elsedirectpath = true;
+          break;
         }
       }
     }
