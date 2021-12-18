@@ -1,4 +1,4 @@
-// Copyright 2000-2021 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license that can be found in the LICENSE file.
+// Copyright 2000-2021 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package org.jetbrains.java.decompiler.main;
 
 import org.jetbrains.java.decompiler.code.CodeConstants;
@@ -510,7 +510,7 @@ public class ClassWriter {
       List<ClassNode> permittedOuterSubClasses = getClassNodes(permittedSubclassSignature).stream()
         .filter(subClass -> !subClass.enclosingClasses.contains(node.classStruct.qualifiedName))
         .collect(Collectors.toList());
-      if (!permittedOuterSubClasses.isEmpty()) { // only generate permits lists for nested classes
+      if (!permittedOuterSubClasses.isEmpty()) { // only generate permits lists for non-nested classes
         buffer.append("permits ");
         for (int i = 0; i < permittedOuterSubClasses.size(); i++) {
           if (i > 0) {
@@ -528,9 +528,16 @@ public class ClassWriter {
 
   private static List<ClassNode> getClassNodes(List<String> qualifiedClassNames) {
     return qualifiedClassNames.stream()
-      .map(str -> DecompilerContext.getClassProcessor().getMapRootClasses().get(str))
+      .map(str -> {
+        ClassNode node = DecompilerContext.getClassProcessor().getMapRootClasses().get(str);
+        if (node == null) {
+          DecompilerContext.getLogger().writeMessage("Could not find class " + str, IFernflowerLogger.Severity.WARN);
+        }
+        return node;
+      })
+      .filter(Objects::nonNull)
       .collect(Collectors.toList()
-    );
+      );
   }
 
   private static boolean isVarArgRecord(StructClass cl) {
@@ -614,7 +621,7 @@ public class ClassWriter {
       if (attr != null) {
         PrimitiveConstant constant = cl.getPool().getPrimitiveConstant(attr.getIndex());
         buffer.append(" = ");
-        buffer.append(new ConstExprent(fieldType, constant.value, null).toJava(indent, tracer));
+        buffer.append(new ConstExprent(fieldType, constant.value, null, fd).toJava(indent, tracer));
       }
     }
 
