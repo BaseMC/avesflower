@@ -1,0 +1,48 @@
+name: Release
+
+on: 
+  workflow_dispatch:
+  push:
+    branches: [ master ]
+
+jobs:
+  build_release:
+    name: Build & Release
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Setup - Java
+        uses: actions/setup-java@v2
+        with:
+          java-version: 11.0.x
+          distribution: 'adopt'
+
+      - name: Setup - Restore Cache
+        uses: actions/cache@v2
+        with:
+          path: ~/.gradle/caches
+          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle') }}
+          restore-keys: |
+            ${{ runner.os }}-gradle-  
+
+      - name: Build - Gradle
+        run: ./gradlew build
+
+      - name: Release - Create Draft for Release
+        id: create_draft
+        uses: release-drafter/release-drafter@v5
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Release - Upload Release Asset
+        id: upload-release-asset 
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_draft.outputs.upload_url }} 
+          asset_path: ./build/libs/avesflower.jar
+          asset_name: avesflower.jar
+          asset_content_type: application/java-archive
