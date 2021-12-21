@@ -43,7 +43,7 @@ public class ClassesProcessor implements CodeConstants {
     private int accessFlags;
 
     private static boolean equal(Inner o1, Inner o2) {
-      return o1.type == o2.type && o1.accessFlags == o2.accessFlags && InterpreterUtil.equalObjects(o1.simpleName, o2.simpleName);
+      return o1.type == o2.type && o1.accessFlags == o2.accessFlags && Objects.equals(o1.simpleName, o2.simpleName);
     }
   }
 
@@ -125,7 +125,7 @@ public class ClassesProcessor implements CodeConstants {
 
     // set non-sealed if class extends or implements a sealed class and is not final or sealed itself
     for (ClassNode clazz : mapRootClasses.values()) {
-      if (clazz.classStruct.isVersion15() &&
+      if (clazz.classStruct.hasSealedClassesSupport() &&
           (clazz.access & CodeConstants.ACC_FINAL) == 0 &&
           clazz.classStruct.getPermittedSubclasses() == null) {
         List<String> qualifiedSealedSuperNames = new ArrayList<>(Arrays.asList(clazz.classStruct.getInterfaceNames()));
