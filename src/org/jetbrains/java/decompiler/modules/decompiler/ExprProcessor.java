@@ -7,6 +7,7 @@ import org.jetbrains.java.decompiler.code.InstructionSequence;
 import org.jetbrains.java.decompiler.code.cfg.BasicBlock;
 import org.jetbrains.java.decompiler.main.DecompilerContext;
 import org.jetbrains.java.decompiler.main.collectors.BytecodeMappingTracer;
+import org.jetbrains.java.decompiler.modules.decompiler.StatEdge.EdgeType;
 import org.jetbrains.java.decompiler.modules.decompiler.exps.*;
 import org.jetbrains.java.decompiler.modules.decompiler.sforms.DirectGraph;
 import org.jetbrains.java.decompiler.modules.decompiler.sforms.DirectNode;
@@ -16,7 +17,7 @@ import org.jetbrains.java.decompiler.modules.decompiler.stats.*;
 import org.jetbrains.java.decompiler.modules.decompiler.typeann.TypeAnnotationWriteHelper;
 import org.jetbrains.java.decompiler.modules.decompiler.vars.VarProcessor;
 import org.jetbrains.java.decompiler.struct.StructClass;
-import org.jetbrains.java.decompiler.struct.StructTypePath;
+import org.jetbrains.java.decompiler.struct.StructTypePathEntry;
 import org.jetbrains.java.decompiler.struct.attr.StructBootstrapMethodsAttribute;
 import org.jetbrains.java.decompiler.struct.attr.StructGeneralAttribute;
 import org.jetbrains.java.decompiler.struct.consts.ConstantPool;
@@ -654,12 +655,12 @@ public class ExprProcessor implements CodeConstants {
     int tp = type.type;
     StringBuilder sb = new StringBuilder();
     typePathWriteStack.removeIf(typeAnnotationWriteHelper -> {
-      StructTypePath path = typeAnnotationWriteHelper.getPaths().peek();
+      StructTypePathEntry path = typeAnnotationWriteHelper.getPaths().peek();
       if (path == null && type.arrayDim == 0) { // nested type
         typeAnnotationWriteHelper.writeTo(sb);
         return true;
       }
-      if (path != null && path.getTypePathKind() == StructTypePath.Kind.ARRAY.getOpcode() &&
+      if (path != null && path.getTypePathEntryKind() == StructTypePathEntry.Kind.ARRAY.getOpcode() &&
         typeAnnotationWriteHelper.getPaths().size() == type.arrayDim
       ) {
         typeAnnotationWriteHelper.writeTo(sb);
@@ -715,8 +716,8 @@ public class ExprProcessor implements CodeConstants {
 
   public static void checkNestedTypeAnnotation(StringBuilder sb, List<TypeAnnotationWriteHelper> typePathWriteStack) {
     typePathWriteStack.removeIf(typeAnnotationWriteHelper -> {
-      StructTypePath path = typeAnnotationWriteHelper.getPaths().peek();
-      if (path != null && path.getTypePathKind() == StructTypePath.Kind.NESTED.getOpcode()) {
+      StructTypePathEntry path = typeAnnotationWriteHelper.getPaths().peek();
+      if (path != null && path.getTypePathEntryKind() == StructTypePathEntry.Kind.NESTED.getOpcode()) {
         typeAnnotationWriteHelper.getPaths().pop();
         if (typeAnnotationWriteHelper.getPaths().isEmpty()) {
           typeAnnotationWriteHelper.writeTo(sb);
@@ -803,20 +804,19 @@ public class ExprProcessor implements CodeConstants {
   public static TextBuffer jmpWrapper(Statement stat, int indent, boolean semicolon, BytecodeMappingTracer tracer) {
     TextBuffer buf = stat.toJava(indent, tracer);
 
-    List<StatEdge> lstSuccs = stat.getSuccessorEdges(Statement.STATEDGE_DIRECT_ALL);
+    List<StatEdge> lstSuccs = stat.getSuccessorEdges(EdgeType.DIRECT_ALL);
     if (lstSuccs.size() == 1) {
       StatEdge edge = lstSuccs.get(0);
-      if (edge.getType() != StatEdge.TYPE_REGULAR && edge.explicit && edge.getDestination().type != Statement.TYPE_DUMMY_EXIT) {
+      if (edge.getType() != EdgeType.REGULAR && edge.explicit && edge.getDestination().type != Statement.TYPE_DUMMY_EXIT) {
         buf.appendIndent(indent);
 
-        switch (edge.getType()) {
-          case StatEdge.TYPE_BREAK:
-            addDeletedGotoInstructionMapping(stat, tracer);
-            buf.append("break");
-            break;
-          case StatEdge.TYPE_CONTINUE:
-            addDeletedGotoInstructionMapping(stat, tracer);
-            buf.append("continue");
+        if (EdgeType.BREAK.equals(edge.getType())) {
+          addDeletedGotoInstructionMapping(stat, tracer);
+          buf.append("break");
+        }
+        else if (EdgeType.CONTINUE.equals(edge.getType())) {
+          addDeletedGotoInstructionMapping(stat, tracer);
+          buf.append("continue");
         }
 
         if (edge.labeled) {
