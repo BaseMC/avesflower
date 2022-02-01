@@ -3,8 +3,8 @@ name: Pull detached upstream automatically
 on:
   workflow_dispatch:
   schedule:
-    # Run twice per week
-    - cron: '22 2 * * 2,6'
+    # Run once per week
+    - cron: '22 2 * * 6'
   
 jobs:
   check_upstream:
