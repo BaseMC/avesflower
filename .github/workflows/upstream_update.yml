@@ -12,7 +12,7 @@ jobs:
     timeout-minutes: 3
     steps:
       # Checkout this repo
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       # Fetch the history and unshallow the checked out repo so that it can be used
       - name: Fetch all history for all tags and branches
         run: git fetch --prune --unshallow
